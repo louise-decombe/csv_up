@@ -35,23 +35,29 @@ class UpdateStockCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $inputFile= $this->projectDir. '/public/supplier-inventory-files/25-07-2021.csv';
-
-        $decoder = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
-        
-        $rows = $decoder->decode(file_get_contents($inputFile), 'csv');
-
-        dd($rows);
+     $supplierProducts =  $this->getCsvRowsAsArray();
+        $processDate = $input->getArgument('process_date');
 
         // convert csv content into php
 
         // loop
+        foreach ($supplierProducts as $supplierProduct) {
+
+        }
 
         //update if record found in DB
 
         //create a new records if matching records not found in the DB
+    }
+
+    public function getCsvRowsAsArray($processDate){
+
+        $inputFile= $this->projectDir. '/public/supplier-inventory-files/25-07-2021'. $processDate .'csv';
+
+        $decoder = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
+
+         return $decoder->decode(file_get_contents($inputFile), 'csv');
 
 
     }
-
 }
