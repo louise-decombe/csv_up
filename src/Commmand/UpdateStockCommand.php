@@ -6,6 +6,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Serializer\Encoder\CsvEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 class UpdateStockCommand extends Command
 {
@@ -32,7 +35,13 @@ class UpdateStockCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-        dd($this->projectDir);
+        $inputFile= $this->projectDir. '/public/supplier-inventory-files/25-07-2021.csv';
+
+        $decoder = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
+        
+        $rows = $decoder->decode(file_get_contents($inputFile), 'csv');
+
+        dd($rows);
 
         // convert csv content into php
 
