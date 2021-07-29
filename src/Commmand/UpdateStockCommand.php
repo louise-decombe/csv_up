@@ -57,7 +57,6 @@ class UpdateStockCommand extends Command
         $decoder = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
 
          return $decoder->decode(file_get_contents($inputFile), 'csv');
-
-
+         
     }
 }
