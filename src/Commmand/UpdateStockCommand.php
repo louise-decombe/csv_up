@@ -2,6 +2,9 @@
 
 namespace App\Commmand;
 
+use App\Entity\StockItem;
+use App\Repository\StockItemRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,9 +19,14 @@ class UpdateStockCommand extends Command
     protected static $defaultName = 'app:update-stock';
     private $projectDir;
 
-    public function __construct($projectDir)
+    /**
+     * @var \Doctrine\ORM\EntityManagerInterface
+     */
+
+    public function __construct($projectDir, EntityManagerInterface $entityManager)
     {
         $this->projectDir = $projectDir;
+        $this->entityManager = $entityManager;
 
         parent::__construct();
     }
@@ -35,13 +43,23 @@ class UpdateStockCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-     $supplierProducts =  $this->getCsvRowsAsArray();
         $processDate = $input->getArgument('process_date');
+
+        $supplierProducts = $this->getCsvRowsAsArray($processDate);
+
+        /** @var StockItemRepository $stockItemRepo */
+        $stockItemRepo = $this->entityManager->getRepository(StockItem::class);
+
+
 
         // convert csv content into php
 
         // loop
         foreach ($supplierProducts as $supplierProduct) {
+
+            $existingStockItem = $stockItemRepo->findBy(['itemNumber' => $supplierProduct['item_number']]);
+
+            dd($existingStockItem);
 
         }
 
@@ -50,13 +68,14 @@ class UpdateStockCommand extends Command
         //create a new records if matching records not found in the DB
     }
 
-    public function getCsvRowsAsArray($processDate){
+    public function getCsvRowsAsArray($processDate)
+    {
 
-        $inputFile= $this->projectDir. '/public/supplier-inventory-files/25-07-2021'. $processDate .'csv';
+        $inputFile = $this->projectDir . '/public/supplier-inventory-files/' . $processDate . '.csv';
 
         $decoder = new Serializer([new ObjectNormalizer()], [new CsvEncoder()]);
 
-         return $decoder->decode(file_get_contents($inputFile), 'csv');
-         
+        return $decoder->decode(file_get_contents($inputFile), 'csv');
+
     }
 }
