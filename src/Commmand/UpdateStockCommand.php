@@ -18,6 +18,10 @@ class UpdateStockCommand extends Command
 
     protected static $defaultName = 'app:update-stock';
     private $projectDir;
+    /**
+     * @var \Doctrine\ORM\EntityManagerInterface
+     */
+    private $entityManager;
 
     /**
      * @var \Doctrine\ORM\EntityManagerInterface
@@ -45,28 +49,59 @@ class UpdateStockCommand extends Command
 
         $processDate = $input->getArgument('process_date');
 
+        $markup = ($input->getArgument('markup') / 100) + 1;
+
         $supplierProducts = $this->getCsvRowsAsArray($processDate);
 
         /** @var StockItemRepository $stockItemRepo */
         $stockItemRepo = $this->entityManager->getRepository(StockItem::class);
 
-
-
-        // convert csv content into php
-
         // loop
         foreach ($supplierProducts as $supplierProduct) {
 
-            $existingStockItem = $stockItemRepo->findBy(['itemNumber' => $supplierProduct['item_number']]);
+            /** @var StockItem $existingStockItem */
+            if($existingStockItem = $stockItemRepo->findOneBy(['itemNumber' => $supplierProduct['item_number']]))
+            {
+                $this->updateStockItem();
+                $existingStockItem->setSupplierCost($supplierProduct['cost']);
+                $existingStockItem->setPrice($supplierProduct['cost'] * $markup);
+                $this->entityManager->persist($existingStockItem);
 
-            dd($existingStockItem);
+                continue;
+            }
+
+            $this->createNewStockItem();
 
         }
 
-        //update if record found in DB
 
-        //create a new records if matching records not found in the DB
     }
+
+    public function createNewStockItem($supplierProduct, $markup){
+
+        $newStockItem = new StockItem();
+        $newStockItem->setItemNumber($supplierProduct['item_number']);
+        $newStockItem->setItemName($supplierProduct['item_name']);
+        $newStockItem->setItemDescription($supplierProduct['description']);
+        $newStockItem->setSupplierCost($supplierProduct['cost']);
+        $newStockItem->setItemPrice($supplierProduct['cost'] * $markup);
+        $this->entityManager->persist($newStockItem);
+
+    }
+
+    public function updateStockItem($supplierProduct, $markup){
+
+        $newStockItem = new StockItem();
+        $newStockItem->setItemNumber($supplierProduct['item_number']);
+        $newStockItem->setItemName($supplierProduct['item_name']);
+        $newStockItem->setItemDescription($supplierProduct['description']);
+        $newStockItem->setSupplierCost($supplierProduct['cost']);
+        $newStockItem->setItemPrice($supplierProduct['cost'] * $markup);
+        $this->entityManager->persist($newStockItem);
+
+    }
+
+
 
     public function getCsvRowsAsArray($processDate)
     {
@@ -78,4 +113,5 @@ class UpdateStockCommand extends Command
         return $decoder->decode(file_get_contents($inputFile), 'csv');
 
     }
+
 }
