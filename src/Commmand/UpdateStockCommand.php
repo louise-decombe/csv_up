@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -56,28 +57,29 @@ class UpdateStockCommand extends Command
         /** @var StockItemRepository $stockItemRepo */
         $stockItemRepo = $this->entityManager->getRepository(StockItem::class);
 
-        // loop
         foreach ($supplierProducts as $supplierProduct) {
 
             /** @var StockItem $existingStockItem */
-            if($existingStockItem = $stockItemRepo->findOneBy(['itemNumber' => $supplierProduct['item_number']]))
-            {
-                $this->updateStockItem();
-                $existingStockItem->setSupplierCost($supplierProduct['cost']);
-                $existingStockItem->setPrice($supplierProduct['cost'] * $markup);
-                $this->entityManager->persist($existingStockItem);
+            if ($existingStockItem = $stockItemRepo->findOneBy(['itemNumber' => $supplierProduct['item_number']])) {
+                $this->updateStockItem($supplierProduct $markup);
 
                 continue;
             }
 
-            $this->createNewStockItem();
+            $this->createNewStockItem($supplierProduct, $markup);
 
         }
 
+        $this->entityManager->flush();
+        $result = new SymfonyStyle($input, $output);
+        $result->success('This have been updated');
+
+            return Command::SUCCESS;
 
     }
 
-    public function createNewStockItem($supplierProduct, $markup){
+    public function createNewStockItem($existingStockItem, $supplierProduct, $markup)
+    {
 
         $newStockItem = new StockItem();
         $newStockItem->setItemNumber($supplierProduct['item_number']);
@@ -89,7 +91,8 @@ class UpdateStockCommand extends Command
 
     }
 
-    public function updateStockItem($supplierProduct, $markup){
+    public function updateStockItem($supplierProduct, $markup)
+    {
 
         $newStockItem = new StockItem();
         $newStockItem->setItemNumber($supplierProduct['item_number']);
@@ -113,5 +116,6 @@ class UpdateStockCommand extends Command
         return $decoder->decode(file_get_contents($inputFile), 'csv');
 
     }
+
 
 }
